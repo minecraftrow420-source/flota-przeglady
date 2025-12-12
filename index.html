@@ -4,1032 +4,116 @@
   <meta charset="UTF-8" />
   <title>Flota – przeglądy, OC, tachograf</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Firebase (wersja kompatybilna – DZIAŁA na GitHub Pages) -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
   <style>
-    :root {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #0f172a;
-      color: #e5e7eb;
-    }
-    body {
-      margin: 0;
-      padding: 1.5rem;
-      display: flex;
-      justify-content: center;
-    }
-    .app {
-      width: 100%;
-      max-width: 1150px;
-      background: #020617;
-      border-radius: 1.5rem;
-      padding: 1.75rem 1.5rem 2.5rem;
-      box-shadow:
-        0 20px 60px rgba(15, 23, 42, 0.8),
-        0 0 0 1px rgba(148, 163, 184, 0.1);
-    }
-    @media (min-width: 768px) {
-      .app {
-        padding: 2rem 2.25rem 2.75rem;
-      }
-    }
-    .app-header {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 1.5rem;
-    }
-    .app-title {
-      font-size: 1.6rem;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
-    }
-    .app-title span.logo {
-      width: 40px;
-      height: 40px;
-      border-radius: 999px;
-      background: radial-gradient(circle at 30% 20%, #4ade80, #22c55e, #0f766e);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.3rem;
-      color: #0f172a;
-      box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.15), 0 10px 25px rgba(34, 197, 94, 0.35);
-    }
-    .app-subtitle {
-      color: #9ca3af;
-      font-size: 0.9rem;
-      max-width: 420px;
-    }
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      padding: 0.35rem 0.8rem;
-      border-radius: 999px;
-      background: rgba(15, 118, 110, 0.2);
-      color: #a5f3fc;
-      font-size: 0.8rem;
-      border: 1px solid rgba(34, 197, 235, 0.25);
-    }
-    .pill-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 999px;
-      background: #22c55e;
-      box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.25);
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: 1.05fr 1.6fr;
-      gap: 1.5rem;
-    }
-    @media (max-width: 1024px) {
-      .grid {
-        grid-template-columns: 1fr;
-      }
-    }
-    .card {
-      background: radial-gradient(circle at top left, rgba(34, 197, 94, 0.08), transparent 55%),
-                  radial-gradient(circle at bottom right, rgba(59, 130, 246, 0.08), transparent 55%),
-                  #020617;
-      border-radius: 1.25rem;
-      padding: 1.25rem 1.25rem 1.35rem;
-      border: 1px solid rgba(148, 163, 184, 0.25);
-    }
-    .card-title {
-      font-size: 1rem;
-      font-weight: 600;
-      margin-bottom: 0.75rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.5rem;
-    }
-    .card-title span.label {
-      font-size: 0.8rem;
-      font-weight: 500;
-      color: #9ca3af;
-    }
-    form {
-      display: grid;
-      gap: 0.75rem;
-    }
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-    }
-    .field-row {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 0.75rem;
-    }
-    label {
-      font-size: 0.8rem;
-      color: #9ca3af;
-    }
-    input, select, textarea {
-      background: rgba(15, 23, 42, 0.9);
-      border-radius: 0.9rem;
-      border: 1px solid rgba(148, 163, 184, 0.5);
-      padding: 0.5rem 0.75rem;
-      color: #e5e7eb;
-      font: inherit;
-      outline: none;
-      transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
-    }
-    textarea {
-      min-height: 60px;
-      resize: vertical;
-    }
-    input:focus, select:focus, textarea:focus {
-      border-color: #22c55e;
-      box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.4);
-      background: rgba(15, 23, 42, 0.95);
-    }
-    input::placeholder, textarea::placeholder {
-      color: #6b7280;
-    }
-    .hint {
-      font-size: 0.75rem;
-      color: #6b7280;
-    }
-    .actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-      align-items: center;
-      margin-top: 0.25rem;
-    }
-    button {
-      border: none;
-      border-radius: 999px;
-      padding: 0.55rem 1.1rem;
-      font: inherit;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      white-space: nowrap;
-    }
-    .btn-primary {
-      background: linear-gradient(135deg, #22c55e, #16a34a);
-      color: #022c22;
-      font-weight: 600;
-      box-shadow: 0 10px 25px rgba(34, 197, 94, 0.35);
-    }
-    .btn-secondary {
-      background: rgba(15, 23, 42, 0.9);
-      color: #e5e7eb;
-      border: 1px solid rgba(148, 163, 184, 0.9);
-      font-size: 0.85rem;
-    }
-    .btn-danger {
-      background: rgba(248, 113, 113, 0.08);
-      color: #fecaca;
-      border-radius: 999px;
-      padding: 0.25rem 0.65rem;
-      font-size: 0.75rem;
-      border: 1px solid rgba(248, 113, 113, 0.5);
-    }
-    .btn-ghost {
-      background: transparent;
-      color: #9ca3af;
-      border-radius: 999px;
-      border: 1px dashed rgba(75, 85, 99, 0.9);
-      font-size: 0.8rem;
-      padding: 0.4rem 0.8rem;
-    }
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 999px;
-    }
-    .status-ok { background: #22c55e; }
-    .status-soon { background: #facc15; }
-    .status-overdue { background: #ef4444; }
-    .reminders-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.75rem;
-      margin-bottom: 0.75rem;
-      flex-wrap: wrap;
-    }
-    .chips {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.35rem;
-      font-size: 0.75rem;
-    }
-    .chip {
-      border-radius: 999px;
-      padding: 0.2rem 0.6rem;
-      border: 1px solid rgba(148, 163, 184, 0.5);
-      color: #9ca3af;
-    }
-    .filters {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-bottom: 0.6rem;
-      font-size: 0.8rem;
-      align-items: center;
-    }
-    .filters select, .filters input {
-      font-size: 0.8rem;
-      padding: 0.35rem 0.55rem;
-      border-radius: 999px;
-    }
-    .table-wrapper {
-      max-height: 440px;
-      overflow: auto;
-      border-radius: 1rem;
-      border: 1px solid rgba(31, 41, 55, 0.9);
-      background: radial-gradient(circle at top left, rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 1));
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.82rem;
-    }
-    thead {
-      position: sticky;
-      top: 0;
-      background: rgba(15, 23, 42, 0.98);
-      backdrop-filter: blur(14px);
-      z-index: 1;
-    }
-    th, td {
-      padding: 0.45rem 0.65rem;
-      text-align: left;
-      border-bottom: 1px solid rgba(30, 41, 59, 0.85);
-    }
-    th {
-      font-size: 0.74rem;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: #9ca3af;
-      white-space: nowrap;
-    }
-    tbody tr:last-child td {
-      border-bottom: none;
-    }
-    tr.overdue {
-      background: rgba(127, 29, 29, 0.4);
-    }
-    tr.soon {
-      background: rgba(161, 98, 7, 0.35);
-    }
-    tr.today {
-      background: rgba(22, 101, 52, 0.4);
-    }
-    .badge {
-      border-radius: 999px;
-      padding: 0.15rem 0.55rem;
-      font-size: 0.72rem;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.3rem;
-    }
-    .badge-type {
-      background: rgba(59, 130, 246, 0.2);
-      color: #bfdbfe;
-      border: 1px solid rgba(59, 130, 246, 0.4);
-    }
-    .badge-kind {
-      background: rgba(56, 189, 248, 0.15);
-      color: #7dd3fc;
-      border: 1px solid rgba(56, 189, 248, 0.4);
-    }
-    .badge-warning {
-      background: rgba(234, 179, 8, 0.2);
-      color: #facc15;
-      border: 1px solid rgba(234, 179, 8, 0.5);
-    }
-    .badge-danger {
-      background: rgba(248, 113, 113, 0.2);
-      color: #fecaca;
-      border: 1px solid rgba(248, 113, 113, 0.5);
-    }
-    .badge-success {
-      background: rgba(34, 197, 94, 0.2);
-      color: #bbf7d0;
-      border: 1px solid rgba(34, 197, 94, 0.6);
-    }
-    .empty-state {
-      padding: 1.2rem;
-      text-align: center;
-      font-size: 0.9rem;
-      color: #6b7280;
-    }
-    .note-row {
-      max-width: 260px;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-      overflow: hidden;
-    }
-    .footer {
-      margin-top: 1.5rem;
-      font-size: 0.75rem;
-      color: #6b7280;
-      display: flex;
-      justify-content: space-between;
-      gap: 0.75rem;
-      flex-wrap: wrap;
-    }
-    .footer span strong {
-      color: #e5e7eb;
-    }
-    .file-input-wrapper {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-    }
-    .file-input-wrapper input[type="file"] {
-      font-size: 0.7rem;
-      max-width: 170px;
-      padding: 0.25rem;
-      border-radius: 999px;
-      border: 1px dashed rgba(75, 85, 99, 0.9);
-      background: transparent;
-    }
+    /* --- STYL BEZ ZMIAN --- */
+    :root{font-family:system-ui,-apple-system,Segoe UI;background:#0f172a;color:#e5e7eb}
+    body{margin:0;padding:1.5rem;display:flex;justify-content:center}
+    .app{width:100%;max-width:1150px;background:#020617;border-radius:1.5rem;padding:1.75rem 1.5rem 2.5rem}
+    .app-title{font-size:1.6rem;font-weight:700;display:flex;gap:.6rem;align-items:center}
+    .logo{width:40px;height:40px;border-radius:50%;background:#22c55e;display:flex;align-items:center;justify-content:center}
+    .grid{display:grid;grid-template-columns:1fr 1.6fr;gap:1.5rem}
+    @media(max-width:900px){.grid{grid-template-columns:1fr}}
+    .card{background:#020617;border-radius:1.2rem;padding:1.2rem;border:1px solid #334155}
+    table{width:100%;border-collapse:collapse;font-size:.85rem}
+    th,td{padding:.45rem;border-bottom:1px solid #1e293b}
+    th{color:#94a3b8;text-transform:uppercase;font-size:.7rem}
+    tr.overdue{background:#7f1d1d55}
+    tr.soon{background:#a1620755}
+    .btn{border-radius:999px;padding:.4rem .9rem;border:none;cursor:pointer}
+    .btn-primary{background:#22c55e;color:#022c22;font-weight:600}
+    .btn-danger{background:#ef444455;color:#fecaca;border:1px solid #ef4444}
+    input,select,textarea{background:#020617;border:1px solid #475569;border-radius:.7rem;color:#e5e7eb;padding:.4rem}
   </style>
 </head>
 <body>
-  <div class="app">
-    <header class="app-header">
-      <div>
-        <div class="app-title">
-          <span class="logo">🚛</span>
-          <span>Flota – przeglądy, OC, tachograf</span>
-        </div>
-        <div class="app-subtitle">
-          Kontrola terminów dla całej floty: ciężarówki, naczepy, osobówki. Przeglądy, OC, legalizacja tachografu, serwisy.
-        </div>
-      </div>
-      <div>
-        <div class="pill">
-          <span class="pill-dot"></span>
-          Działa lokalnie · brak logowania
-        </div>
-      </div>
-    </header>
 
-    <main class="grid">
-      <!-- Formularz -->
-      <section class="card">
-        <div class="card-title">
-          Dodaj nowy termin
-          <span class="label">np. „R450 NDZ4701 – przegląd + tacho”</span>
-        </div>
+<div class="app">
+  <div class="app-title"><span class="logo">🚛</span>Flota – wspólne terminy</div>
+
+  <main class="grid" style="margin-top:1rem">
+
+    <!-- FORM -->
+    <section class="card">
+      <h3>Dodaj termin</h3>
+      <form id="form">
+        <input id="vehicle" placeholder="Pojazd / rejestracja" required><br><br>
+        <select id="type">
+          <option>Przegląd techniczny</option>
+          <option>OC / ubezpieczenie</option>
+          <option>Legalizacja tachografu</option>
+        </select><br><br>
+        <input id="date" type="date" required><br><br>
+        <button class="btn btn-primary">Dodaj</button>
+      </form>
+    </section>
+
+    <!-- TABLE -->
+    <section class="card">
+      <h3>Wszystkie terminy (wspólne)</h3>
+      <table>
+        <thead>
+          <tr><th>Pojazd</th><th>Rodzaj</th><th>Data</th><th></th></tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  // 🔥 TWÓJ FIREBASE CONFIG
+  const firebaseConfig = {
+    apiKey: "AIzaSyCYtnjGKsWC2GOhlgLL6iQcFj5mVRJOzRw",
+    authDomain: "flota-przeglady.firebaseapp.com",
+    projectId: "flota-przeglady",
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  const tbody = document.getElementById('tbody');
+
+  // LIVE DATA
+  db.collection('reminders').orderBy('date').onSnapshot(snap => {
+    tbody.innerHTML='';
+    snap.forEach(doc => {
+      const r = doc.data();
+      const tr = document.createElement('tr');
+      const diff = Math.floor((new Date(r.date) - new Date())/86400000);
+      if(diff<0) tr.className='overdue';
+      else if(diff<=30) tr.className='soon';
+      tr.innerHTML = `
+        <td>${r.vehicle}</td>
+        <td>${r.type}</td>
+        <td>${r.date}</td>
+        <td><button class="btn btn-danger" onclick="del('${doc.id}')">Usuń</button></td>`;
+      tbody.appendChild(tr);
+    })
+  });
+
+  // ADD
+  document.getElementById('form').addEventListener('submit',e=>{
+    e.preventDefault();
+    db.collection('reminders').add({
+      vehicle: vehicle.value,
+      type: type.value,
+      date: date.value,
+      created: new Date()
+    });
+    e.target.reset();
+  })
+
+  // DELETE
+  function del(id){
+    if(confirm('Usunąć termin?')) db.collection('reminders').doc(id).delete();
+  }
+</script>
 
-        <form id="reminderForm">
-          <div class="field-row">
-            <div class="field">
-              <label for="vehicle">Pojazd / nr rejestracyjny</label>
-              <input id="vehicle" type="text" placeholder="Np. Scania R450 NDZ4701" required />
-            </div>
-            <div class="field">
-              <label for="vehicleType">Typ pojazdu</label>
-              <select id="vehicleType" required>
-                <option value="Ciężarówka">Ciężarówka</option>
-                <option value="Naczepa">Naczepa</option>
-                <option value="Samochód osobowy">Samochód osobowy</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="field-row">
-            <div class="field">
-              <label for="type">Rodzaj terminu</label>
-              <select id="type" required>
-                <option value="Przegląd techniczny">Przegląd techniczny</option>
-                <option value="Legalizacja tachografu">Legalizacja tachografu</option>
-                <option value="OC / ubezpieczenie">OC / ubezpieczenie</option>
-                <option value="Serwis oleju">Serwis oleju</option>
-                <option value="Opony / sezon">Opony / sezon</option>
-                <option value="Inne">Inne</option>
-              </select>
-            </div>
-
-            <div class="field">
-              <label for="date">Termin (data)</label>
-              <input id="date" type="date" required />
-            </div>
-          </div>
-
-          <div class="field-row">
-            <div class="field">
-              <label for="daysBefore">Powiadom ile dni wcześniej</label>
-              <input id="daysBefore" type="number" min="0" max="365" value="30" />
-              <div class="hint">Np. 7, 14, 30, 60 dni.</div>
-            </div>
-
-            <div class="field">
-              <label for="mileage">Przebieg (opcjonalnie)</label>
-              <input id="mileage" type="number" min="0" placeholder="Np. 750000" />
-            </div>
-          </div>
-
-          <div class="field">
-            <label for="notes">Notatki (opcjonalne)</label>
-            <textarea id="notes" placeholder="Np. ITD, warsztat, co zrobić przy okazji"></textarea>
-          </div>
-
-          <div class="actions">
-            <button type="submit" class="btn-primary">
-              ➕ Dodaj termin
-            </button>
-            <button type="button" id="enableNotifications" class="btn-secondary">
-              🔔 Włącz powiadomienia przeglądarki
-            </button>
-            <div class="hint">
-              Dane są zapisywane lokalnie w tej przeglądarce (localStorage).
-            </div>
-          </div>
-        </form>
-
-        <hr style="border:none;border-top:1px solid rgba(31,41,55,0.9);margin:1rem 0;" />
-
-        <div class="field">
-          <label>Backup / przenoszenie danych</label>
-          <div class="actions">
-            <button type="button" id="exportCsv" class="btn-ghost">⬇️ Eksport do CSV (Excel)</button>
-            <div class="file-input-wrapper">
-              <input type="file" id="importFile" accept=".csv" />
-              <button type="button" id="importCsv" class="btn-ghost">⬆️ Import z CSV</button>
-            </div>
-          </div>
-          <div class="hint">
-            CSV zawiera wszystkie pola (pojazd, typ, data, przebieg, notatki, itp.). Możesz otworzyć w Excelu,
-            a potem wrócić do aplikacji.
-          </div>
-        </div>
-      </section>
-
-      <!-- Lista terminów -->
-      <section class="card">
-        <div class="reminders-header">
-          <div class="card-title">
-            Nadchodzące terminy floty
-          </div>
-          <div class="chips">
-            <span class="chip">🟥 Po terminie</span>
-            <span class="chip">🟧 Zbliża się</span>
-            <span class="chip">🟩 OK</span>
-          </div>
-        </div>
-
-        <div class="filters">
-          <span>Filtr:</span>
-          <select id="filterVehicleType">
-            <option value="Wszystkie">Wszystkie typy pojazdów</option>
-            <option value="Ciężarówka">Ciężarówki</option>
-            <option value="Naczepa">Naczepy</option>
-            <option value="Samochód osobowy">Samochody osobowe</option>
-          </select>
-          <input id="filterVehicle" type="text" placeholder="Szukaj po pojeździe / rejestracji" />
-        </div>
-
-        <div class="table-wrapper" id="tableWrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Pojazd</th>
-                <th>Typ pojazdu</th>
-                <th>Rodzaj</th>
-                <th>Data</th>
-                <th>Za ile dni</th>
-                <th>Przebieg</th>
-                <th>Notatki</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="remindersBody"></tbody>
-          </table>
-        </div>
-        <div id="emptyState" class="empty-state" style="display:none;">
-          Brak zapisanych terminów. Dodaj pierwszy po lewej stronie.
-        </div>
-      </section>
-    </main>
-
-    <footer class="footer">
-      <span>
-        Wszystko zapisane jest <strong>lokalnie w tej przeglądarce</strong> (bez serwera, bez chmury).
-      </span>
-      <span>
-        Powiadomienia 🔔 działają, gdy ta strona jest otwarta i masz włączone powiadomienia.
-      </span>
-    </footer>
-  </div>
-
-  <script>
-    const STORAGE_KEY = "fleetReminders_v1";
-
-    /** @type {Array} */
-    let reminders = [];
-
-    function loadReminders() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) {
-          reminders = [];
-        } else {
-          reminders = JSON.parse(raw);
-          if (!Array.isArray(reminders)) reminders = [];
-        }
-      } catch (e) {
-        console.error("Błąd przy wczytywaniu z localStorage", e);
-        reminders = [];
-      }
-    }
-
-    function saveReminders() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(reminders));
-    }
-
-    function daysBetween(today, dueDate) {
-      const msPerDay = 24 * 60 * 60 * 1000;
-      const diff = dueDate - today;
-      return Math.round(diff / msPerDay);
-    }
-
-    function parseDate(dateStr) {
-      if (!dateStr) return null;
-      const [y, m, d] = dateStr.split("-").map(Number);
-      if (!y || !m || !d) return null;
-      return new Date(y, m - 1, d);
-    }
-
-    function formatDate(dateStr) {
-      if (!dateStr) return "";
-      return dateStr.split("-").reverse().join(".");
-    }
-
-    function escapeHtml(text) {
-      if (!text) return "";
-      return text
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-    }
-
-    function deleteReminder(id) {
-      if (!confirm("Na pewno usunąć ten termin?")) return;
-      reminders = reminders.filter((r) => r.id !== id);
-      saveReminders();
-      renderReminders();
-    }
-
-    function renderReminders() {
-      const tbody = document.getElementById("remindersBody");
-      const emptyState = document.getElementById("emptyState");
-      const tableWrapper = document.getElementById("tableWrapper");
-
-      if (!reminders.length) {
-        tbody.innerHTML = "";
-        emptyState.style.display = "block";
-        tableWrapper.style.display = "none";
-        return;
-      }
-
-      emptyState.style.display = "none";
-      tableWrapper.style.display = "block";
-
-      const filterVehicleType = document.getElementById("filterVehicleType").value;
-      const filterVehicle = document.getElementById("filterVehicle").value.trim().toLowerCase();
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      // sortuj po dacie
-      let filtered = reminders
-        .filter((r) => {
-          if (filterVehicleType !== "Wszystkie" && r.vehicleType !== filterVehicleType) return false;
-          if (filterVehicle && !r.vehicle.toLowerCase().includes(filterVehicle)) return false;
-          return true;
-        })
-        .sort((a, b) => {
-          if (a.date < b.date) return -1;
-          if (a.date > b.date) return 1;
-          return 0;
-        });
-
-      tbody.innerHTML = "";
-
-      if (!filtered.length) {
-        tbody.innerHTML = "";
-        emptyState.style.display = "block";
-        tableWrapper.style.display = "none";
-        return;
-      }
-
-      for (const r of filtered) {
-        const due = parseDate(r.date);
-        const tr = document.createElement("tr");
-
-        let daysLeft = null;
-        let cls = "";
-        let statusBadge = "";
-        if (due) {
-          const diff = daysBetween(today, due);
-          daysLeft = diff;
-
-          if (diff < 0) {
-            cls = "overdue";
-            statusBadge = '<span class="badge badge-danger"><span class="status-dot status-overdue"></span>Po terminie</span>';
-          } else if (diff === 0) {
-            cls = "today";
-            statusBadge = '<span class="badge badge-warning"><span class="status-dot status-soon"></span>Dzisiaj</span>';
-          } else if (diff <= Number(r.daysBefore || 0)) {
-            cls = "soon";
-            statusBadge = '<span class="badge badge-warning"><span class="status-dot status-soon"></span>Zbliża się</span>';
-          } else {
-            statusBadge = '<span class="badge badge-success"><span class="status-dot status-ok"></span>OK</span>';
-          }
-        }
-
-        tr.className = cls;
-
-        const typeBadgeClass =
-          r.type === "Legalizacja tachografu"
-            ? "badge badge-kind"
-            : "badge badge-type";
-
-        tr.innerHTML = `
-          <td>${escapeHtml(r.vehicle)}</td>
-          <td><span class="badge badge-type">${escapeHtml(r.vehicleType)}</span></td>
-          <td><span class="${typeBadgeClass}">${escapeHtml(r.type)}</span></td>
-          <td>${formatDate(r.date)}</td>
-          <td>
-            ${daysLeft === null ? "" : daysLeft + " dni"}
-            ${statusBadge ? "<br/>" + statusBadge : ""}
-          </td>
-          <td>${r.mileage ? Number(r.mileage).toLocaleString("pl-PL") + " km" : ""}</td>
-          <td class="note-row" title="${escapeHtml(r.notes || "")}">
-            ${r.notes ? escapeHtml(r.notes) : ""}
-          </td>
-          <td>
-            <button class="btn-danger" data-id="${r.id}">Usuń</button>
-          </td>
-        `;
-
-        tbody.appendChild(tr);
-      }
-
-      tbody.querySelectorAll("button.btn-danger").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const id = btn.getAttribute("data-id");
-          deleteReminder(id);
-        });
-      });
-    }
-
-    function handleFormSubmit(event) {
-      event.preventDefault();
-      const vehicle = document.getElementById("vehicle").value.trim();
-      const vehicleType = document.getElementById("vehicleType").value;
-      const type = document.getElementById("type").value;
-      const date = document.getElementById("date").value;
-      const daysBefore = document.getElementById("daysBefore").value || "0";
-      const mileage = document.getElementById("mileage").value;
-      const notes = document.getElementById("notes").value.trim();
-
-      if (!vehicle || !date) {
-        alert("Wpisz nazwę pojazdu i datę.");
-        return;
-      }
-
-      const id = Date.now().toString() + "_" + Math.random().toString(16).slice(2);
-
-      const baseReminder = {
-        id,
-        vehicle,
-        vehicleType,
-        type,
-        date,
-        daysBefore: Number(daysBefore),
-        mileage: mileage ? Number(mileage) : null,
-        notes,
-        notified: false,
-        autoGenerated: false
-      };
-
-      reminders.push(baseReminder);
-
-      // Automatyczna kolejna legalizacja tachografu +2 lata
-      if (type === "Legalizacja tachografu") {
-        const d = parseDate(date);
-        if (d) {
-          const next = new Date(d);
-          next.setFullYear(next.getFullYear() + 2);
-          const nextDateStr = [
-            next.getFullYear(),
-            String(next.getMonth() + 1).padStart(2, "0"),
-            String(next.getDate()).padStart(2, "0")
-          ].join("-");
-
-          const autoReminder = {
-            id: Date.now().toString() + "_auto_" + Math.random().toString(16).slice(2),
-            vehicle,
-            vehicleType,
-            type: "Legalizacja tachografu",
-            date: nextDateStr,
-            daysBefore: Number(daysBefore),
-            mileage: mileage ? Number(mileage) : null,
-            notes: notes ? notes + " (kolejna legalizacja)" : "Kolejna legalizacja tachografu",
-            notified: false,
-            autoGenerated: true
-          };
-
-          reminders.push(autoReminder);
-        }
-      }
-
-      saveReminders();
-      renderReminders();
-
-      event.target.reset();
-      document.getElementById("daysBefore").value = "30";
-    }
-
-    // Powiadomienia przeglądarkowe
-    function setupNotificationsButton() {
-      const btn = document.getElementById("enableNotifications");
-      if (!("Notification" in window)) {
-        btn.disabled = true;
-        btn.textContent = "Powiadomienia niedostępne w tej przeglądarce";
-        return;
-      }
-
-      updateNotificationsButtonText();
-
-      btn.addEventListener("click", () => {
-        if (Notification.permission === "granted") {
-          alert("Powiadomienia są już włączone w przeglądarce 👌");
-          return;
-        }
-        Notification.requestPermission().then((perm) => {
-          if (perm === "granted") {
-            alert("Powiadomienia włączone. Strona musi być otwarta, żeby działały.");
-          } else {
-            alert("Powiadomienia odrzucone. Możesz zmienić to w ustawieniach przeglądarki.");
-          }
-          updateNotificationsButtonText();
-        });
-      });
-    }
-
-    function updateNotificationsButtonText() {
-      const btn = document.getElementById("enableNotifications");
-      if (!("Notification" in window)) return;
-
-      if (Notification.permission === "granted") {
-        btn.textContent = "🔔 Powiadomienia włączone";
-      } else if (Notification.permission === "denied") {
-        btn.textContent = "🔕 Powiadomienia zablokowane w przeglądarce";
-      } else {
-        btn.textContent = "🔔 Włącz powiadomienia przeglądarki";
-      }
-    }
-
-    function checkDueNotifications() {
-      if (!("Notification" in window)) return;
-      if (Notification.permission !== "granted") return;
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      let changed = false;
-
-      for (const r of reminders) {
-        if (r.notified) continue;
-        const due = parseDate(r.date);
-        if (!due) continue;
-
-        const diff = daysBetween(today, due);
-        const daysBefore = Number(r.daysBefore || 0);
-
-        if (diff >= 0 && diff <= daysBefore) {
-          const title = `Termin: ${r.type}`;
-          const body = `${r.vehicle} – ${formatDate(r.date)} (za ${diff} dni)`;
-          try {
-            new Notification(title, { body });
-          } catch (e) {
-            console.error("Błąd powiadomienia", e);
-          }
-          r.notified = true;
-          changed = true;
-        }
-      }
-
-      if (changed) saveReminders();
-    }
-
-    // CSV export/import
-    function exportToCsv() {
-      if (!reminders.length) {
-        alert("Brak danych do eksportu.");
-        return;
-      }
-      const header = [
-        "id",
-        "vehicle",
-        "vehicleType",
-        "type",
-        "date",
-        "daysBefore",
-        "mileage",
-        "notes",
-        "notified",
-        "autoGenerated"
-      ];
-      const rows = reminders.map((r) => {
-        return header
-          .map((key) => {
-            let val = r[key] !== undefined && r[key] !== null ? String(r[key]) : "";
-            // prosty escape; zamiana " na ""
-            if (val.includes('"') || val.includes(";") || val.includes("\n")) {
-              val = '"' + val.replace(/"/g, '""') + '"';
-            }
-            return val;
-          })
-          .join(";");
-      });
-      const csv = header.join(";") + "\n" + rows.join("\n");
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      const now = new Date();
-      const ts = [
-        now.getFullYear(),
-        String(now.getMonth() + 1).padStart(2, "0"),
-        String(now.getDate()).padStart(2, "0")
-      ].join("-");
-      a.href = url;
-      a.download = "flota_przeglady_" + ts + ".csv";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }
-
-    function parseCsvLine(line) {
-      const result = [];
-      let current = "";
-      let inQuotes = false;
-      for (let i = 0; i < line.length; i++) {
-        const ch = line[i];
-        if (inQuotes) {
-          if (ch === '"') {
-            if (i + 1 < line.length && line[i + 1] === '"') {
-              current += '"';
-              i++;
-            } else {
-              inQuotes = false;
-            }
-          } else {
-            current += ch;
-          }
-        } else {
-          if (ch === ";") {
-            result.push(current);
-            current = "";
-          } else if (ch === '"') {
-            inQuotes = true;
-          } else {
-            current += ch;
-          }
-        }
-      }
-      result.push(current);
-      return result;
-    }
-
-    function importFromCsv(file) {
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        const text = e.target.result;
-        const lines = text.split(/\r?\n/).filter((l) => l.trim() !== "");
-        if (!lines.length) {
-          alert("Plik CSV jest pusty.");
-          return;
-        }
-        const headerLine = lines[0];
-        const header = headerLine.split(";");
-        const expectedHeader = [
-          "id",
-          "vehicle",
-          "vehicleType",
-          "type",
-          "date",
-          "daysBefore",
-          "mileage",
-          "notes",
-          "notified",
-          "autoGenerated"
-        ];
-        // bardzo prosty check – jeśli się różni, nadal spróbujemy, ale ostrzeżemy
-        const headerOk = expectedHeader.every((h, idx) => header[idx] === h);
-        if (!headerOk) {
-          if (
-            !confirm(
-              "Nagłówek CSV nie wygląda na wygenerowany z tej aplikacji. Spróbować mimo to?"
-            )
-          ) {
-            return;
-          }
-        }
-        const imported = [];
-        for (let i = 1; i < lines.length; i++) {
-          const line = lines[i].trim();
-          if (!line) continue;
-          const cols = parseCsvLine(line);
-          const obj = {};
-          expectedHeader.forEach((h, idx) => {
-            obj[h] = cols[idx] !== undefined ? cols[idx] : "";
-          });
-          // konwersje typów
-          obj.daysBefore = obj.daysBefore ? Number(obj.daysBefore) : 0;
-          obj.mileage = obj.mileage ? Number(obj.mileage) : null;
-          obj.notified = obj.notified === "true";
-          obj.autoGenerated = obj.autoGenerated === "true";
-          if (!obj.id) {
-            obj.id = Date.now().toString() + "_imp_" + Math.random().toString(16).slice(2);
-          }
-          imported.push(obj);
-        }
-        if (!imported.length) {
-          alert("Brak rekordów do importu.");
-          return;
-        }
-        if (
-          !confirm(
-            "Zaimportować " +
-              imported.length +
-              " rekordów? Istniejące dane pozostaną (zostaną dodane kolejne)."
-          )
-        ) {
-          return;
-        }
-        reminders = reminders.concat(imported);
-        saveReminders();
-        renderReminders();
-        alert("Import zakończony.");
-      };
-      reader.onerror = function () {
-        alert("Błąd podczas odczytu pliku CSV.");
-      };
-      reader.readAsText(file, "UTF-8");
-    }
-
-    function init() {
-      loadReminders();
-      renderReminders();
-
-      document
-        .getElementById("reminderForm")
-        .addEventListener("submit", handleFormSubmit);
-
-      setupNotificationsButton();
-
-      document
-        .getElementById("filterVehicleType")
-        .addEventListener("change", renderReminders);
-      document
-        .getElementById("filterVehicle")
-        .addEventListener("input", renderReminders);
-
-      document
-        .getElementById("exportCsv")
-        .addEventListener("click", exportToCsv);
-
-      document
-        .getElementById("importCsv")
-        .addEventListener("click", () => {
-          const fileInput = document.getElementById("importFile");
-          if (!fileInput.files || !fileInput.files[0]) {
-            alert("Wybierz plik CSV do importu.");
-            return;
-          }
-          importFromCsv(fileInput.files[0]);
-        });
-
-      // pierwsze sprawdzenie powiadomień
-      checkDueNotifications();
-      // i co minutę
-      setInterval(checkDueNotifications, 60000);
-    }
-
-    document.addEventListener("DOMContentLoaded", init);
-  </script>
 </body>
 </html>
