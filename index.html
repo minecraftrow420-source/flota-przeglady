@@ -1,118 +1,247 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="UTF-8" />
-  <title>Flota – przeglądy, OC, tachograf</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta charset="UTF-8" />
+<title>Flota – przeglądy, OC, tachograf</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Firebase (wersja kompatybilna – DZIAŁA na GitHub Pages) -->
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
-  <style>
-    /* --- STYL BEZ ZMIAN --- */
-    :root{font-family:system-ui,-apple-system,Segoe UI;background:#0f172a;color:#e5e7eb}
-    body{margin:0;padding:1.5rem;display:flex;justify-content:center}
-    .app{width:100%;max-width:1150px;background:#020617;border-radius:1.5rem;padding:1.75rem 1.5rem 2.5rem}
-    .app-title{font-size:1.6rem;font-weight:700;display:flex;gap:.6rem;align-items:center}
-    .logo{width:40px;height:40px;border-radius:50%;background:#22c55e;display:flex;align-items:center;justify-content:center}
-    .grid{display:grid;grid-template-columns:1fr 1.6fr;gap:1.5rem}
-    @media(max-width:900px){.grid{grid-template-columns:1fr}}
-    .card{background:#020617;border-radius:1.2rem;padding:1.2rem;border:1px solid #334155}
-    table{width:100%;border-collapse:collapse;font-size:.85rem}
-    th,td{padding:.45rem;border-bottom:1px solid #1e293b}
-    th{color:#94a3b8;text-transform:uppercase;font-size:.7rem}
-    tr.overdue{background:#7f1d1d55}
-    tr.soon{background:#a1620755}
-    .btn{border-radius:999px;padding:.4rem .9rem;border:none;cursor:pointer}
-    .btn-primary{background:#22c55e;color:#022c22;font-weight:600}
-    .btn-danger{background:#ef444455;color:#fecaca;border:1px solid #ef4444}
-    input,select,textarea{background:#020617;border:1px solid #475569;border-radius:.7rem;color:#e5e7eb;padding:.4rem}
-  </style>
+<style>
+:root{
+  --bg:#020617;
+  --card:#020617cc;
+  --border:#1e293b;
+  --text:#e5e7eb;
+  --muted:#94a3b8;
+  --green:#22c55e;
+  --yellow:#facc15;
+  --red:#ef4444;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu;
+}
+
+body{
+  margin:0;
+  background:radial-gradient(circle at top,#020617,#000);
+  color:var(--text);
+  padding:24px;
+}
+
+.app{
+  max-width:1400px;
+  margin:auto;
+}
+
+.header{
+  font-size:26px;
+  font-weight:700;
+  margin-bottom:18px;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:420px 1fr;
+  gap:24px;
+}
+@media(max-width:1100px){.grid{grid-template-columns:1fr}}
+
+.card{
+  background:linear-gradient(180deg,#020617ee,#020617cc);
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:22px;
+  box-shadow:0 20px 60px #000;
+}
+
+.card h3{
+  margin:0 0 14px;
+  font-size:18px;
+}
+
+label{font-size:13px;color:var(--muted)}
+
+input,select,textarea{
+  width:100%;
+  background:#020617;
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:10px 12px;
+  color:var(--text);
+  outline:none;
+}
+
+textarea{resize:vertical;min-height:80px}
+
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+.btn{
+  border-radius:999px;
+  padding:12px 18px;
+  border:none;
+  cursor:pointer;
+  font-weight:600;
+}
+
+.btn-primary{
+  background:linear-gradient(135deg,#22c55e,#16a34a);
+  color:#022c22;
+}
+
+.badge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:4px 10px;
+  border-radius:999px;
+  font-size:12px;
+}
+.badge.ok{background:#16a34a33;color:#22c55e;border:1px solid #22c55e55}
+.badge.soon{background:#facc1533;color:#facc15;border:1px solid #facc1555}
+.badge.over{background:#ef444433;color:#ef4444;border:1px solid #ef444455}
+
+.table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:14px;
+}
+.table th{
+  text-align:left;
+  font-size:12px;
+  color:var(--muted);
+  padding:10px;
+}
+.table td{
+  padding:14px 10px;
+  border-top:1px solid var(--border);
+}
+
+tr.overdue{background:#7f1d1d55}
+tr.soon{background:#78350f55}
+
+.delete{
+  background:#ef444420;
+  border:1px solid #ef444455;
+  color:#fecaca;
+  border-radius:999px;
+  padding:6px 12px;
+  cursor:pointer;
+}
+</style>
 </head>
 <body>
 
 <div class="app">
-  <div class="app-title"><span class="logo">🚛</span>Flota – wspólne terminy</div>
+  <div class="header">🚛 Flota – przeglądy, OC, legalizacja tachografu</div>
 
-  <main class="grid" style="margin-top:1rem">
+  <div class="grid">
 
     <!-- FORM -->
-    <section class="card">
-      <h3>Dodaj termin</h3>
+    <div class="card">
+      <h3>Dodaj nowy termin</h3>
       <form id="form">
-        <input id="vehicle" placeholder="Pojazd / rejestracja" required><br><br>
-        <select id="type">
-          <option>Przegląd techniczny</option>
-          <option>OC / ubezpieczenie</option>
-          <option>Legalizacja tachografu</option>
-        </select><br><br>
-        <input id="date" type="date" required><br><br>
-        <button class="btn btn-primary">Dodaj</button>
+        <label>Pojazd / nr rejestracyjny</label>
+        <input id="vehicle" placeholder="Np. Scania R450 NDZ4701" required>
+        <br><br>
+
+        <div class="row">
+          <div>
+            <label>Typ pojazdu</label>
+            <select id="vehicleType">
+              <option>Ciężarówka</option>
+              <option>Naczepa</option>
+              <option>Samochód osobowy</option>
+            </select>
+          </div>
+          <div>
+            <label>Rodzaj terminu</label>
+            <select id="type">
+              <option>Przegląd techniczny</option>
+              <option>OC / ubezpieczenie</option>
+              <option>Legalizacja tachografu</option>
+            </select>
+          </div>
+        </div>
+        <br>
+
+        <label>Termin (data)</label>
+        <input id="date" type="date" required>
+        <br><br>
+
+        <label>Notatki</label>
+        <textarea id="notes" placeholder="ITD, warsztat…"></textarea>
+        <br>
+
+        <button class="btn btn-primary">➕ Dodaj termin</button>
       </form>
-    </section>
+    </div>
 
     <!-- TABLE -->
-    <section class="card">
-      <h3>Wszystkie terminy (wspólne)</h3>
-      <table>
+    <div class="card">
+      <h3>Nadchodzące terminy floty</h3>
+      <table class="table">
         <thead>
-          <tr><th>Pojazd</th><th>Rodzaj</th><th>Data</th><th></th></tr>
+          <tr>
+            <th>Pojazd</th><th>Typ</th><th>Rodzaj</th><th>Data</th><th>Status</th><th></th>
+          </tr>
         </thead>
         <tbody id="tbody"></tbody>
       </table>
-    </section>
+    </div>
 
-  </main>
+  </div>
 </div>
 
 <script>
-  // 🔥 TWÓJ FIREBASE CONFIG
-  const firebaseConfig = {
-    apiKey: "AIzaSyCYtnjGKsWC2GOhlgLL6iQcFj5mVRJOzRw",
-    authDomain: "flota-przeglady.firebaseapp.com",
-    projectId: "flota-przeglady",
-  };
+const firebaseConfig={
+  apiKey:"AIzaSyCYtnjGKsWC2GOhlgLL6iQcFj5mVRJOzRw",
+  authDomain:"flota-przeglady.firebaseapp.com",
+  projectId:"flota-przeglady"
+};
 
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
+firebase.initializeApp(firebaseConfig);
+const db=firebase.firestore();
+const tbody=document.getElementById('tbody');
 
-  const tbody = document.getElementById('tbody');
+function daysDiff(d){return Math.floor((new Date(d)-new Date())/86400000)}
 
-  // LIVE DATA
-  db.collection('reminders').orderBy('date').onSnapshot(snap => {
-    tbody.innerHTML='';
-    snap.forEach(doc => {
-      const r = doc.data();
-      const tr = document.createElement('tr');
-      const diff = Math.floor((new Date(r.date) - new Date())/86400000);
-      if(diff<0) tr.className='overdue';
-      else if(diff<=30) tr.className='soon';
-      tr.innerHTML = `
+// LIVE
+ db.collection('reminders').orderBy('date').onSnapshot(s=>{
+  tbody.innerHTML='';
+  s.forEach(doc=>{
+    const r=doc.data();
+    const diff=daysDiff(r.date);
+    let cls='ok',row='';
+    if(diff<0){cls='over';row='overdue'}
+    else if(diff<=30){cls='soon';row='soon'}
+
+    tbody.innerHTML+=`
+      <tr class="${row}">
         <td>${r.vehicle}</td>
+        <td>${r.vehicleType}</td>
         <td>${r.type}</td>
         <td>${r.date}</td>
-        <td><button class="btn btn-danger" onclick="del('${doc.id}')">Usuń</button></td>`;
-      tbody.appendChild(tr);
-    })
-  });
-
-  // ADD
-  document.getElementById('form').addEventListener('submit',e=>{
-    e.preventDefault();
-    db.collection('reminders').add({
-      vehicle: vehicle.value,
-      type: type.value,
-      date: date.value,
-      created: new Date()
-    });
-    e.target.reset();
+        <td><span class="badge ${cls}">${diff<0?'Po terminie':diff+' dni'}</span></td>
+        <td><button class="delete" onclick="del('${doc.id}')">Usuń</button></td>
+      </tr>`;
   })
+ });
 
-  // DELETE
-  function del(id){
-    if(confirm('Usunąć termin?')) db.collection('reminders').doc(id).delete();
-  }
+// ADD
+form.addEventListener('submit',e=>{
+  e.preventDefault();
+  db.collection('reminders').add({
+    vehicle:vehicle.value,
+    vehicleType:vehicleType.value,
+    type:type.value,
+    date:date.value,
+    notes:notes.value
+  });
+  e.target.reset();
+});
+
+function del(id){if(confirm('Usunąć?'))db.collection('reminders').doc(id).delete()}
 </script>
 
 </body>
